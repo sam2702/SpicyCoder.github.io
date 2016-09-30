@@ -1,4 +1,4 @@
-// 📝 Fetch all DOM nodes in jQuery and Snap SVG
+// ðŸ“ Fetch all DOM nodes in jQuery and Snap SVG
 
 var container = $('.container');
 var card = $('#card');
@@ -14,13 +14,15 @@ var innerRainHolder1 = weatherContainer1.group();
 var innerRainHolder2 = weatherContainer2.group();
 var innerRainHolder3 = weatherContainer3.group();
 var innerLeafHolder = weatherContainer1.group();
+var innerSnowHolder = weatherContainer1.group();
 var innerLightningHolder = weatherContainer1.group();
 var leafMask = outerSVG.rect();
 var leaf = Snap.select('#leaf');
 var sun = Snap.select('#sun');
-//var sunburst = Snap.select('#sunburst');
+var sunburst = Snap.select('#sunburst');
 var outerSplashHolder = outerSVG.group();
 var outerLeafHolder = outerSVG.group();
+var outerSnowHolder = outerSVG.group();
 
 var lightningTimeout;
 
@@ -45,43 +47,45 @@ var clouds = [
 	{group: Snap.select('#cloud3')}
 ]
 
-// set weather types ☁️ 🌬 🌧 ⛈ ☀️
+// set weather types â˜ï¸ ðŸŒ¬ ðŸŒ§ â›ˆ â˜€ï¸
 
 var weather = [
-	{ type: 'cloud', name: 'Overcast'}, 
+	{ type: 'snow', name: 'Snow'}, 
 	{ type: 'wind', name: 'Windy'}, 
 	{ type: 'rain', name: 'Rain'}, 
 	{ type: 'thunder', name: 'Storms'},
 	{ type: 'sun', name: 'Sunny'}
 ];
 
-// 🛠 app settings
+// ðŸ›  app settings
 // in an object so the values can be animated in tweenmax
 
 var settings = {
-	windSpeed: 20,
+	windSpeed: 2,
 	rainCount: 0,
 	leafCount: 0,
-	cloudHeight: 50,
-	cloudSpace: 15,
-	cloudArch: 15,
-	renewCheck: 5,
-	splashBounce: 40
+	snowCount: 0,
+	cloudHeight: 100,
+	cloudSpace: 30,
+	cloudArch: 50,
+	renewCheck: 10,
+	splashBounce: 80
 };
 
 var tickCount = 0;
 var rain = [];
 var leafs = [];
+var snow = [];
 
-// ⚙ initialize app
+// âš™ initialize app
 
 init();
 
-// 👁 watch for window resize
+// ðŸ‘ watch for window resize
 
 $(window).resize(onResize);
 
-// 🏃 start animations
+// ðŸƒ start animations
 
 requestAnimationFrame(tick);
 
@@ -89,7 +93,7 @@ function init()
 {
 	onResize();
 	
-	// 🖱 bind weather menu buttons
+	// ðŸ–± bind weather menu buttons
 	
 	for(var i = 0; i < weather.length; i++)
 	{
@@ -99,7 +103,7 @@ function init()
 		b.bind('click', w, changeWeather);
 	}
 	
-	// ☁️ draw clouds
+	// â˜ï¸ draw clouds
 	
 	for(var i = 0; i < clouds.length; i++)
 	{
@@ -107,14 +111,15 @@ function init()
 		drawCloud(clouds[i], i);
 	}
 	
-	// ☀️ set initial weather
+	// â˜€ï¸ set initial weather
 	
-	changeWeather(weather[1]);
+	TweenMax.set(sunburst.node, {opacity: 0})
+	changeWeather(weather[0]);
 }
 
 function onResize()
 {
-	// 📏 grab window and card sizes 
+	// ðŸ“ grab window and card sizes 
 	
 	sizes.container.width = container.width();
 	sizes.container.height = container.height();
@@ -122,7 +127,7 @@ function onResize()
 	sizes.card.height = card.height();
 	sizes.card.offset = card.offset();
 	
-	// 📐 update svg sizes
+	// ðŸ“ update svg sizes
 	
 	innerSVG.attr({
 		width: sizes.card.width,
@@ -139,7 +144,9 @@ function onResize()
 		height: sizes.container.height
 	})
 	
-	// 🍃 The leaf mask is for the leafs that float out of the
+	TweenMax.set(sunburst.node, {transformOrigin:"50% 50%", x: sizes.container.width / 2, y: (sizes.card.height/2) + sizes.card.offset.top});
+	TweenMax.fromTo(sunburst.node, 20, {rotation: 0}, {rotation: 360, repeat: -1, ease: Power0.easeInOut})
+	// ðŸƒ The leaf mask is for the leafs that float out of the
 	// container, it is full window height and starts on the left
 	// inline with the card
 	
@@ -150,7 +157,7 @@ function drawCloud(cloud, i)
 {
 	/* 
 	
-	☁️ We want to create a shape thats loopable but that can also
+	â˜ï¸ We want to create a shape thats loopable but that can also
 	be animated in and out. So we use Snap SVG to draw a shape
 	with 4 sections. The 2 ends and 2 arches the same width as
 	the card. So the final shape is about 4 x the width of the
@@ -184,7 +191,7 @@ function drawCloud(cloud, i)
 
 function makeRain()
 {
-	// 💧 This is where we draw one drop of rain
+	// ðŸ’§ This is where we draw one drop of rain
 	
 	// first we set the line width of the line, we use this
 	// to dictate which svg group it'll be added to and 
@@ -192,14 +199,14 @@ function makeRain()
 	
 	var lineWidth = Math.random() * 3;
 	
-	// ⛈ line length is made longer for stormy weather
+	// â›ˆ line length is made longer for stormy weather
 	
 	var lineLength = currentWeather.type == 'thunder' ? 35 : 14;
 	
 	// Start the drop at a random point at the top but leaving 
 	// a 20px margin 
 	
-	var x = Math.random() * (sizes.card.width - 20) + 20;
+	var x = Math.random() * (sizes.card.width - 40) + 20;
 	
 	// Draw the line
 	
@@ -222,7 +229,7 @@ function makeRain()
 
 function onRainEnd(line, width, x, type)
 {
-	// first lets get rid of the drop of rain 💧
+	// first lets get rid of the drop of rain ðŸ’§
 	
 	line.remove();
 	line = null;
@@ -241,7 +248,7 @@ function onRainEnd(line, width, x, type)
 	{
 		makeRain();
 		
-		// 💦 If the line width was more than 2 we also create a 
+		// ðŸ’¦ If the line width was more than 2 we also create a 
 		// splash. This way it looks like the closer (bigger) 
 		// drops hit the the edge of the card
 		
@@ -251,7 +258,7 @@ function onRainEnd(line, width, x, type)
 
 function makeSplash(x, type)
 {
-	// 💦 The splash is a single line added to the outer svg.
+	// ðŸ’¦ The splash is a single line added to the outer svg.
 
 	// The splashLength is how long the animated line will be
 	var splashLength = type == 'thunder' ? 30 : 20;
@@ -302,7 +309,7 @@ function makeSplash(x, type)
 
 function onSplashComplete(splash)
 {
-	// 💦 The splash has finished animating, we need to get rid of it
+	// ðŸ’¦ The splash has finished animating, we need to get rid of it
 	
 	splash.remove();
 	splash = null;
@@ -370,6 +377,65 @@ function onLeafEnd(leaf)
 	}
 }
 
+function makeSnow()
+{
+	var scale = 0.5 + (Math.random() * 0.5);
+	var newSnow;
+	
+	var x = 20 + (Math.random() * (sizes.card.width - 40));
+	var endX; // = x - ((Math.random() * (areaX * 2)) - areaX)
+	var y = -10;
+	var endY;
+	
+	if(scale > 0.8)
+	{
+		newSnow = outerSnowHolder.circle(0, 0, 5)
+			.attr({
+				fill: 'white'
+			})
+		endY = sizes.container.height + 10;
+		y = sizes.card.offset.top + settings.cloudHeight;
+		x =  x + sizes.card.offset.left;
+		//xBezier = x + (sizes.container.width - sizes.card.offset.left) / 2;
+		//endX = sizes.container.width + 50;
+	}
+	else 
+	{
+		newSnow = innerSnowHolder.circle(0, 0 ,5)
+		.attr({
+			fill: 'white'
+		})
+		endY = sizes.card.height + 10;
+		//x = -100;
+		//xBezier = sizes.card.width / 2;
+		//endX = sizes.card.width + 50;
+		
+	}
+	
+	snow.push(newSnow);
+	 
+	
+	TweenMax.fromTo(newSnow.node, 3 + (Math.random() * 5), {x: x, y: y}, {y: endY, onComplete: onSnowEnd, onCompleteParams: [newSnow], ease: Power0.easeIn})
+	TweenMax.fromTo(newSnow.node, 1,{scale: 0}, {scale: scale, ease: Power1.easeInOut})
+	TweenMax.to(newSnow.node, 3, {x: x+((Math.random() * 150)-75), repeat: -1, yoyo: true, ease: Power1.easeInOut})
+}
+
+function onSnowEnd(flake)
+{
+	flake.remove();
+	flake = null;
+	
+	for(var i in snow)
+	{
+		if(!snow[i].paper) snow.splice(i, 1);
+	}
+	
+	if(snow.length < settings.snowCount)
+	{
+		makeSnow();
+	}
+}
+
 function tick()
 {
 	tickCount++;
@@ -379,6 +445,7 @@ function tick()
 	{
 		if(rain.length < settings.rainCount) makeRain();
 		if(leafs.length < settings.leafCount) makeLeaf();
+		if(snow.length < settings.snowCount) makeSnow();
 	}
 	
 	for(var i = 0; i < clouds.length; i++)
@@ -498,10 +565,22 @@ function changeWeather(weather)
 	switch(weather.type)
 	{
 		case 'wind':
-			TweenMax.to(settings, 3, {leafCount: 4, ease: Power2.easeInOut});
+			TweenMax.to(settings, 3, {leafCount: 5, ease: Power2.easeInOut});
 			break;
 		default:
 			TweenMax.to(settings, 1, {leafCount: 0, ease: Power2.easeOut});
+			break;
+	}	
+	
+	// snowCount
+	
+	switch(weather.type)
+	{
+		case 'snow':
+			TweenMax.to(settings, 3, {snowCount: 40, ease: Power2.easeInOut});
+			break;
+		default:
+			TweenMax.to(settings, 1, {snowCount: 0, ease: Power2.easeOut});
 			break;
 	}
 	
@@ -511,11 +590,11 @@ function changeWeather(weather)
 	{
 		case 'sun':
 			TweenMax.to(sun.node, 4, {x: sizes.card.width / 2, y: sizes.card.height / 2, ease: Power2.easeInOut});
-			//TweenMax.to(sunburst.node, 4, {scale: 1, ease: Power2.easeInOut});
+			TweenMax.to(sunburst.node, 4, {scale: 1, opacity: 0.8, y: (sizes.card.height/2) + (sizes.card.offset.top), ease: Power2.easeInOut});
 			break;
 		default:
-			TweenMax.to(sun.node, 4, {x: sizes.card.width / 2, y: -100, leafCount: 0, ease: Power2.easeInOut});
-			//TweenMax.to(sunburst.node, 4, {scale: 0, ease: Power2.easeInOut});
+			TweenMax.to(sun.node, 2, {x: sizes.card.width / 2, y: -100, leafCount: 0, ease: Power2.easeInOut});
+			TweenMax.to(sunburst.node, 2, {scale: 0.4, opacity: 0, y: (sizes.container.height/2)-50, ease: Power2.easeInOut});
 			break;
 	}	
 	
